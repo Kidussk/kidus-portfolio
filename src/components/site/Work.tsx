@@ -6,7 +6,8 @@ import { projects, type Project } from '@/data/projects'
 
 export function Work() {
   return (
-    <section id="work" className="relative scroll-mt-20 py-20 sm:py-28">
+    // overflow-x-clip contains the preview cards' bleed glow on narrow screens
+    <section id="work" className="relative scroll-mt-20 overflow-x-clip py-20 sm:py-28">
       <div className="wrap">
         <header className="max-w-3xl" data-reveal>
           <p className="eyebrow">Selected work</p>
