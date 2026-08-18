@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
-  BadgeCheck,
+  Building2,
+  Check,
   CreditCard,
+  Filter,
   LayoutDashboard,
-  MessageSquarePlus,
+  MessageSquare,
+  Plus,
   Search,
   Send,
-  Smartphone,
-  Users,
-  Radio,
-  Check,
-  X,
+  Settings,
+  Trash2,
 } from 'lucide-react'
 import { DemoShell, type DemoProps, type NavItem } from '../DemoShell'
 import {
@@ -23,7 +23,6 @@ import {
   Panel,
   PanelHead,
   Progress,
-  Row,
   Select,
   Stat,
   StatRow,
@@ -31,682 +30,292 @@ import {
   TableWrap,
   TD,
   TH,
-  Textarea,
-  compact,
   cx,
   money,
-  money2,
   shortDate,
   useToast,
-  type Tone,
 } from '../kit'
 import {
-  RATE,
-  campaigns as seedCampaigns,
-  contacts,
-  dailyVolume,
-  gateways,
-  payments as seedPayments,
+  branches as seedBranches,
+  dailyForwards,
+  exceptionNumbers as seedExceptions,
+  messages,
+  payments,
   plans,
-  segments,
-  segmentsFor,
-  type Campaign,
-  type Payment,
+  salesPeople,
+  subscription,
+  type Branch,
+  type ExceptionNumber,
 } from './data'
 
 const nav: NavItem[] = [
-  { key: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
-  { key: 'compose', label: 'Compose', icon: <MessageSquarePlus size={16} /> },
-  { key: 'campaigns', label: 'Campaigns', icon: <Send size={16} />, badge: 5 },
-  { key: 'contacts', label: 'Contacts', icon: <Users size={16} /> },
-  { key: 'gateways', label: 'Gateways', icon: <Smartphone size={16} />, badge: '3/4' },
-  { key: 'billing', label: 'Billing', icon: <CreditCard size={16} />, badge: 2 },
+  { key: 'home', label: 'Home', icon: <LayoutDashboard size={16} /> },
+  { key: 'messages', label: 'Messages', icon: <MessageSquare size={16} />, badge: messages.filter((m) => m.forwarded).length },
+  { key: 'branches', label: 'Branches', icon: <Building2 size={16} /> },
+  { key: 'telegram', label: 'Telegram', icon: <Send size={16} /> },
+  { key: 'exceptions', label: 'Exceptions', icon: <Filter size={16} /> },
+  { key: 'subscription', label: 'Subscription', icon: <CreditCard size={16} /> },
 ]
 
 const titles: Record<string, [string, string]> = {
-  overview: ['Overview', 'Delivery performance across the account'],
-  compose: ['Compose', 'Merge fields, segment targeting and a live cost estimate'],
-  campaigns: ['Campaigns', 'Every send and its delivery breakdown'],
-  contacts: ['Contacts', 'Lists, opt-outs and imports'],
-  gateways: ['Gateways', 'Android handsets paired to this account'],
-  billing: ['Billing', 'Plans, quota and bank transfer approval'],
+  home: ['Home', 'SMS interception overview and forwarding stats'],
+  messages: ['Messages', 'Incoming SMS log — forwarded and ignored'],
+  branches: ['Branches', 'Corporate branch management with sales person assignment'],
+  telegram: ['Telegram Setup', 'Connect branches to Telegram channels'],
+  exceptions: ['Exception Numbers', 'Numbers to skip when intercepting'],
+  subscription: ['Subscription', 'Plan, usage and payment history'],
 }
 
 export default function FetanSmsDemo({ project }: DemoProps) {
-  const [screen, setScreen] = useState('overview')
-  const [campaigns, setCampaigns] = useState<Campaign[]>(seedCampaigns)
-  const [payments, setPayments] = useState<Payment[]>(seedPayments)
-  const [title, subtitle] = titles[screen]
-
-  /** Walks any "sending" campaign towards completion so the demo feels live. */
-  useEffect(() => {
-    const live = campaigns.some((c) => c.status === 'sending')
-    if (!live) return
-    const timer = setInterval(() => {
-      setCampaigns((prev) =>
-        prev.map((c) => {
-          if (c.status !== 'sending') return c
-          const step = Math.ceil(c.recipients / 12)
-          const done = Math.min(c.recipients, c.delivered + c.failed + step)
-          const failed = Math.round(done * 0.032)
-          return done >= c.recipients
-            ? { ...c, delivered: c.recipients - failed, failed, status: 'completed' as const }
-            : { ...c, delivered: done - failed, failed }
-        }),
-      )
-    }, 700)
-    return () => clearInterval(timer)
-  }, [campaigns])
+  const [screen, setScreen] = useState('home')
+  const [branchList, setBranchList] = useState<Branch[]>(seedBranches)
+  const [exceptions, setExceptions] = useState<ExceptionNumber[]>(seedExceptions)
+  const [title, subtitle] = titles[screen] ?? ['', '']
 
   return (
-    <DemoShell
-      project={project}
-      nav={nav}
-      active={screen}
-      onNavigate={setScreen}
-      title={title}
-      subtitle={subtitle}
-      user={{ name: 'Fetan Tech', role: 'Account owner · Business plan' }}
-    >
-      {screen === 'overview' && <Overview campaigns={campaigns} />}
-      {screen === 'compose' && (
-        <Compose
-          onSend={(c) => {
-            setCampaigns((prev) => [c, ...prev])
-            setScreen('campaigns')
-          }}
-        />
-      )}
-      {screen === 'campaigns' && <Campaigns campaigns={campaigns} />}
-      {screen === 'contacts' && <Contacts />}
-      {screen === 'gateways' && <Gateways />}
-      {screen === 'billing' && <Billing payments={payments} setPayments={setPayments} />}
+    <DemoShell project={project} nav={nav} active={screen} onNavigate={setScreen} title={title} subtitle={subtitle}>
+      {screen === 'home' && <HomeScreen />}
+      {screen === 'messages' && <MessagesScreen />}
+      {screen === 'branches' && <BranchesScreen branches={branchList} setBranches={setBranchList} />}
+      {screen === 'telegram' && <TelegramScreen branches={branchList} />}
+      {screen === 'exceptions' && <ExceptionsScreen exceptions={exceptions} setExceptions={setExceptions} />}
+      {screen === 'subscription' && <SubscriptionScreen />}
     </DemoShell>
   )
 }
 
-const tooltipStyle = {
-  background: '#141922',
-  border: '1px solid #262e3b',
-  borderRadius: 10,
-  fontSize: 12,
-  color: '#eef2f8',
-} as const
+/* ───── Home ───── */
 
-/* =================================================================== *
- * Overview
- * =================================================================== */
-
-function Overview({ campaigns }: { campaigns: Campaign[] }) {
-  const done = campaigns.filter((c) => c.status === 'completed')
-  const delivered = done.reduce((s, c) => s + c.delivered, 0)
-  const failed = done.reduce((s, c) => s + c.failed, 0)
-  const rate = delivered + failed ? (delivered / (delivered + failed)) * 100 : 0
-  const used = delivered + failed
-  const quota = 25_000
+function HomeScreen() {
+  const forwarded = messages.filter((m) => m.forwarded).length
+  const ignored = messages.filter((m) => m.ignored).length
+  const activeBranches = seedBranches.filter((b) => b.active).length
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <StatRow>
-        <Stat label="Delivered (30 days)" value={compact(delivered)} sub={`${rate.toFixed(1)}% delivery rate`} icon={<Send size={14} />} />
-        <Stat label="Failed" value={failed.toLocaleString()} sub="Retried up to three times" />
-        <Stat label="Quota used" value={`${Math.round((used / quota) * 100)}%`} sub={`${used.toLocaleString()} of ${quota.toLocaleString()}`} icon={<Radio size={14} />} />
-        <Stat label="Gateways online" value={`${gateways.filter((g) => g.online).length} / ${gateways.length}`} icon={<Smartphone size={14} />} />
+        <Stat label="Messages today" value={String(forwarded + ignored)} />
+        <Stat label="Forwarded" value={String(forwarded)} />
+        <Stat label="Ignored" value={String(ignored)} />
+        <Stat label="Active branches" value={String(activeBranches)} />
       </StatRow>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <Panel className="lg:col-span-3">
-          <PanelHead title="Volume this week" hint="Delivered against failed, by day" />
-          <div className="h-56">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Panel>
+          <PanelHead title="Forwarding volume" hint="Messages intercepted this week" />
+          <div className="h-56 px-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyVolume} margin={{ top: 4, right: 4, bottom: 0, left: -14 }}>
-                <XAxis
-                  dataKey="day"
-                  tick={{ fill: '#6b7688', fontSize: 11 }}
-                  axisLine={{ stroke: '#1c222d' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: '#6b7688', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => compact(v as number)}
-                />
-                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.03)' }} contentStyle={tooltipStyle} />
-                <Bar dataKey="delivered" stackId="a" fill="var(--accent)" radius={[0, 0, 0, 0]} maxBarSize={38} name="Delivered" />
-                <Bar dataKey="failed" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={38} name="Failed" />
+              <BarChart data={dailyForwards} barGap={4}>
+                <XAxis dataKey="day" tick={{ fill: '#8994a6', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#8994a6', fontSize: 12 }} axisLine={false} tickLine={false} width={32} />
+                <Tooltip contentStyle={{ background: '#141922', border: '1px solid #1c222d', borderRadius: 8, fontSize: 13 }} />
+                <Bar dataKey="forwarded" name="Forwarded" fill="#A07CF0" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="ignored" name="Ignored" fill="#38424f" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Panel>
 
-        <Panel className="lg:col-span-2">
-          <PanelHead title="Gateway fleet" hint="Android handsets doing the sending" />
-          <ul className="space-y-2.5">
-            {gateways.map((g) => (
-              <li key={g.id} className="rounded-lg border border-ink-700 bg-ink-900 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium text-chalk-100">
-                      {g.label} · {g.device}
-                    </p>
-                    <p className="text-[11px] text-chalk-600">{g.operator}</p>
-                  </div>
-                  <Badge tone={g.online ? 'good' : 'bad'} dot>
-                    {g.online ? 'Online' : 'Offline'}
-                  </Badge>
-                </div>
-                <div className="mt-2.5 flex items-center gap-3">
-                  <Progress
-                    value={g.battery}
-                    tone={g.battery < 20 ? '#f43f5e' : g.battery < 40 ? '#f59e0b' : '#34d399'}
-                    className="flex-1"
-                  />
-                  <span className="tabular w-16 shrink-0 text-right text-[11px] text-chalk-500">
-                    {g.battery}% · {g.queued}q
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+        <Panel>
+          <PanelHead title="Subscription status" />
+          <div className="space-y-4 px-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-chalk-300">Plan</span>
+              <Badge tone="accent">{subscription.plan}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-chalk-300">Status</span>
+              <Badge tone="good">Active</Badge>
+            </div>
+            <div>
+              <div className="mb-1.5 flex items-center justify-between text-sm">
+                <span className="text-chalk-500">Messages used</span>
+                <span className="tabular text-chalk-100">{subscription.messagesUsed.toLocaleString()} / {subscription.messagesLimit.toLocaleString()}</span>
+              </div>
+              <Progress value={(subscription.messagesUsed / subscription.messagesLimit) * 100} />
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-chalk-500">Renews</span>
+              <span className="text-chalk-100">{shortDate(subscription.endDate)}</span>
+            </div>
+          </div>
         </Panel>
       </div>
 
       <Panel>
-        <PanelHead title="Recent campaigns" />
+        <PanelHead title="Recent messages" hint="Last 5 intercepted SMS" />
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <TH>Campaign</TH>
-                <TH className="hidden sm:table-cell">Segment</TH>
-                <TH align="right">Recipients</TH>
-                <TH align="right">Delivered</TH>
-                <TH className="w-32">Rate</TH>
+                <TH>From</TH>
+                <TH>Message</TH>
+                <TH>Branch</TH>
                 <TH>Status</TH>
+                <TH>Time</TH>
               </tr>
             </thead>
             <tbody>
-              {campaigns.slice(0, 5).map((c) => {
-                const total = c.delivered + c.failed
-                const pct = total ? (c.delivered / total) * 100 : 0
-                return (
-                  <Row key={c.id}>
-                    <TD>
-                      <p className="font-medium text-chalk-100">{c.name}</p>
-                      <p className="tabular font-mono text-[11px] text-chalk-600">{c.id}</p>
-                    </TD>
-                    <TD className="hidden sm:table-cell">{c.segment}</TD>
-                    <TD align="right" className="tabular">
-                      {c.recipients.toLocaleString()}
-                    </TD>
-                    <TD align="right" className="tabular">
-                      {c.delivered.toLocaleString()}
-                    </TD>
-                    <TD>
-                      <div className="flex items-center gap-2">
-                        <Progress value={pct} className="flex-1" />
-                        <span className="tabular w-10 text-right text-[11px] text-chalk-500">
-                          {pct.toFixed(0)}%
-                        </span>
-                      </div>
-                    </TD>
-                    <TD>
-                      <Badge tone={statusTone(c.status)} dot>
-                        {c.status}
-                      </Badge>
-                    </TD>
-                  </Row>
-                )
-              })}
-            </tbody>
-          </Table>
-        </TableWrap>
-      </Panel>
-    </div>
-  )
-}
-
-function statusTone(s: Campaign['status']): Tone {
-  return s === 'completed' ? 'good' : s === 'sending' ? 'accent' : s === 'scheduled' ? 'info' : 'neutral'
-}
-
-/* =================================================================== *
- * Compose
- * =================================================================== */
-
-function Compose({ onSend }: { onSend: (c: Campaign) => void }) {
-  const toast = useToast()
-  const [name, setName] = useState('')
-  const [segmentId, setSegmentId] = useState(segments[0].id)
-  const [body, setBody] = useState(
-    'Hi {{name}}, thank you for shopping with Fetan. Show this message for 10% off your next visit. Reply STOP to opt out.',
-  )
-
-  const segment = segments.find((s) => s.id === segmentId)!
-  const { parts, limit, unicode } = segmentsFor(body)
-  const cost = parts * segment.size * RATE
-
-  const preview = body.replace(/\{\{name\}\}/g, 'Almaz')
-
-  const send = () => {
-    if (!body.trim()) return
-    onSend({
-      id: `CMP-${1186 + Math.floor(Math.random() * 30)}`,
-      name: name.trim() || 'Untitled campaign',
-      segment: segment.name,
-      sent: '2026-08-13',
-      recipients: segment.size,
-      delivered: 0,
-      failed: 0,
-      status: 'sending',
-      body,
-    })
-    toast(`Queued to ${segment.size.toLocaleString()} recipients across 3 gateways`)
-  }
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-12">
-      <div className="space-y-4 lg:col-span-7">
-        <Panel>
-          <PanelHead title="Message" hint="Merge fields are replaced per recipient at send time" />
-          <div className="space-y-3">
-            <Field label="Campaign name">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Meskel promotion"
-              />
-            </Field>
-            <Field label="Audience">
-              <Select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}>
-                {segments.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — {s.size.toLocaleString()} contacts
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Body" hint={segment.note}>
-              <Textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} />
-            </Field>
-            <div className="flex flex-wrap gap-1.5">
-              {['{{name}}', '{{first_name}}', '{{balance}}', '{{branch}}'].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setBody((b) => `${b}${f}`)}
-                  className="rounded-md border border-ink-600 bg-ink-900 px-2 py-1 font-mono text-[11px] text-chalk-400 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-        </Panel>
-
-        <Panel>
-          <PanelHead title="Cost estimate" hint={`Billed per segment at ${money2(RATE)} each`} />
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-ink-700 bg-ink-700 sm:grid-cols-4">
-            {[
-              ['Characters', `${body.length} / ${limit}`],
-              ['Segments', String(parts)],
-              ['Recipients', segment.size.toLocaleString()],
-              ['Estimated cost', money(cost)],
-            ].map(([k, v]) => (
-              <div key={k} className="bg-ink-900 px-3 py-3">
-                <dt className="text-[10px] font-semibold tracking-wider text-chalk-600 uppercase">
-                  {k}
-                </dt>
-                <dd className="tabular mt-1 text-[15px] font-semibold text-chalk-50">{v}</dd>
-              </div>
-            ))}
-          </dl>
-          {unicode && (
-            <p className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-[12px] text-amber-300">
-              Non-GSM characters detected — the message switches to Unicode, so each part holds only{' '}
-              {limit} characters instead of 153.
-            </p>
-          )}
-          <div className="mt-4 flex gap-2">
-            <Btn variant="solid" size="md" onClick={send}>
-              <Send size={14} /> Send now
-            </Btn>
-            <Btn size="md" onClick={() => toast('Saved as a draft')}>
-              Save draft
-            </Btn>
-          </div>
-        </Panel>
-      </div>
-
-      {/* handset preview */}
-      <div className="lg:col-span-5">
-        <p className="mb-2.5 text-[11px] font-semibold tracking-wider text-chalk-600 uppercase">
-          Handset preview
-        </p>
-        <div className="mx-auto w-full max-w-[17rem] rounded-[2rem] border-4 border-ink-700 bg-ink-950 p-3 shadow-2xl shadow-black/50">
-          <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-ink-700" />
-          <div className="flex items-center gap-2 border-b border-ink-800 pb-2.5">
-            <span className="grid size-7 place-items-center rounded-full bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent)]">
-              FT
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[12px] font-medium text-chalk-100">FETAN</p>
-              <p className="text-[10px] text-chalk-600">SMS</p>
-            </div>
-          </div>
-          <div className="min-h-[13rem] py-3">
-            {preview.trim() ? (
-              <div className="max-w-[92%] rounded-2xl rounded-tl-sm bg-ink-800 px-3 py-2.5">
-                <p className="text-[12.5px] leading-relaxed break-words text-chalk-100">
-                  {preview}
-                </p>
-                <p className="mt-1.5 text-[10px] text-chalk-600">
-                  now · {parts} segment{parts === 1 ? '' : 's'}
-                </p>
-              </div>
-            ) : (
-              <p className="pt-10 text-center text-[12px] text-chalk-600">
-                Your message appears here
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* =================================================================== *
- * Campaigns
- * =================================================================== */
-
-function Campaigns({ campaigns }: { campaigns: Campaign[] }) {
-  const [openId, setOpenId] = useState<string | null>(campaigns[0]?.id ?? null)
-  const selected = campaigns.find((c) => c.id === openId) ?? campaigns[0] ?? null
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-5">
-      <Panel className="lg:col-span-3">
-        <PanelHead title="All campaigns" hint="Click a row to open its delivery breakdown" />
-        <TableWrap>
-          <Table>
-            <thead>
-              <tr>
-                <TH>Campaign</TH>
-                <TH className="hidden md:table-cell">Segment</TH>
-                <TH align="right">Sent</TH>
-                <TH>Status</TH>
-                <TH align="right">Date</TH>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map((c) => (
-                <Row key={c.id} onClick={() => setOpenId(c.id)} active={c.id === selected?.id}>
+              {messages.slice(0, 5).map((m) => (
+                <tr key={m.id}>
+                  <TD className="font-mono">{m.from}</TD>
+                  <TD className="max-w-[320px] truncate">{m.body}</TD>
+                  <TD>{m.branch || '—'}</TD>
                   <TD>
-                    <p className="font-medium text-chalk-100">{c.name}</p>
-                    <p className="tabular font-mono text-[11px] text-chalk-600">{c.id}</p>
-                  </TD>
-                  <TD className="hidden md:table-cell">{c.segment}</TD>
-                  <TD align="right" className="tabular">
-                    {c.recipients.toLocaleString()}
-                  </TD>
-                  <TD>
-                    <Badge tone={statusTone(c.status)} dot>
-                      {c.status}
+                    <Badge tone={m.forwarded ? 'good' : m.ignored ? 'neutral' : 'warn'}>
+                      {m.forwarded ? 'Forwarded' : m.ignored ? 'Ignored' : 'Pending'}
                     </Badge>
                   </TD>
-                  <TD align="right" className="tabular text-[12px]">
-                    {shortDate(c.sent)}
-                  </TD>
-                </Row>
+                  <TD className="tabular whitespace-nowrap">{m.received}</TD>
+                </tr>
               ))}
             </tbody>
           </Table>
         </TableWrap>
       </Panel>
-
-      <Panel className="lg:col-span-2">
-        {selected ? (
-          <>
-            <PanelHead title={selected.name} hint={selected.id} />
-            <div className="rounded-lg border border-ink-700 bg-ink-900 p-3.5">
-              <p className="text-[12.5px] leading-relaxed text-chalk-300">{selected.body}</p>
-            </div>
-
-            <dl className="mt-4 space-y-3">
-              {[
-                { k: 'Delivered', v: selected.delivered, tone: '#34d399' },
-                { k: 'Failed', v: selected.failed, tone: '#f43f5e' },
-                {
-                  k: 'Pending',
-                  v: Math.max(0, selected.recipients - selected.delivered - selected.failed),
-                  tone: '#6b7688',
-                },
-              ].map((r) => {
-                const pct = selected.recipients ? (r.v / selected.recipients) * 100 : 0
-                return (
-                  <div key={r.k}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-[12px] text-chalk-500">{r.k}</dt>
-                      <dd className="tabular text-[13px] font-medium text-chalk-100">
-                        {r.v.toLocaleString()}{' '}
-                        <span className="text-[11px] text-chalk-600">({pct.toFixed(1)}%)</span>
-                      </dd>
-                    </div>
-                    <Progress value={pct} tone={r.tone} className="mt-1.5" />
-                  </div>
-                )
-              })}
-            </dl>
-
-            <dl className="mt-5 border-t border-ink-800 pt-4 text-[12.5px]">
-              <div className="flex justify-between gap-3 py-1.5">
-                <dt className="text-chalk-600">Segment</dt>
-                <dd className="text-chalk-200">{selected.segment}</dd>
-              </div>
-              <div className="flex justify-between gap-3 py-1.5">
-                <dt className="text-chalk-600">Parts per message</dt>
-                <dd className="tabular text-chalk-200">{segmentsFor(selected.body).parts}</dd>
-              </div>
-              <div className="flex justify-between gap-3 py-1.5">
-                <dt className="text-chalk-600">Cost</dt>
-                <dd className="tabular text-chalk-200">
-                  {money(segmentsFor(selected.body).parts * selected.recipients * RATE)}
-                </dd>
-              </div>
-            </dl>
-          </>
-        ) : (
-          <Empty>No campaigns yet.</Empty>
-        )}
-      </Panel>
     </div>
   )
 }
 
-/* =================================================================== *
- * Contacts
- * =================================================================== */
+/* ───── Messages ───── */
 
-function Contacts() {
+function MessagesScreen() {
+  const [filter, setFilter] = useState<'all' | 'forwarded' | 'ignored'>('all')
   const [q, setQ] = useState('')
-  const [seg, setSeg] = useState('all')
 
-  const shown = useMemo(() => {
-    const needle = q.trim().toLowerCase()
-    return contacts.filter((c) => {
-      if (seg !== 'all' && c.segment !== seg) return false
-      if (!needle) return true
-      return `${c.name} ${c.msisdn} ${c.segment}`.toLowerCase().includes(needle)
-    })
-  }, [q, seg])
+  const filtered = useMemo(() => {
+    let list = messages
+    if (filter === 'forwarded') list = list.filter((m) => m.forwarded)
+    if (filter === 'ignored') list = list.filter((m) => m.ignored)
+    if (q) list = list.filter((m) => m.body.toLowerCase().includes(q.toLowerCase()) || m.from.includes(q))
+    return list
+  }, [filter, q])
 
   return (
     <div className="space-y-4">
-      <StatRow>
-        <Stat label="Total contacts" value="8,420" icon={<Users size={14} />} />
-        <Stat label="Opted out" value="164" sub="Excluded from every send" />
-        <Stat label="Segments" value={segments.length} />
-        <Stat label="Added this month" value="615" />
-      </StatRow>
-
-      <Panel>
-        <PanelHead
-          title="Segments"
-          hint="Membership is evaluated at send time, not stored"
-        />
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
-          {segments.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSeg(s.name)}
-              className={cx(
-                'rounded-lg border p-3.5 text-left transition-colors',
-                seg === s.name
-                  ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
-                  : 'border-ink-700 bg-ink-900 hover:border-ink-600',
-              )}
-            >
-              <p className="text-[12.5px] font-medium text-chalk-100">{s.name}</p>
-              <p className="tabular mt-1.5 text-xl font-semibold text-chalk-50">
-                {compact(s.size)}
-              </p>
-              <p className="mt-1 text-[11px] leading-snug text-chalk-600">{s.note}</p>
-            </button>
-          ))}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-chalk-600" />
+          <Input className="pl-9" placeholder="Search messages or numbers…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-      </Panel>
+        <Select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
+          <option value="all">All messages</option>
+          <option value="forwarded">Forwarded</option>
+          <option value="ignored">Ignored</option>
+        </Select>
+      </div>
 
-      <Panel>
-        <PanelHead
-          title="Contact list"
-          hint="Numbers are masked in this demo"
-          right={
-            <div className="flex items-center gap-2">
-              {seg !== 'all' && <Btn onClick={() => setSeg('all')}>Clear segment</Btn>}
-              <div className="relative w-48">
-                <Search
-                  size={14}
-                  className="absolute top-1/2 left-3 -translate-y-1/2 text-chalk-600"
-                />
-                <Input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search…"
-                  className="pl-8"
-                />
-              </div>
-            </div>
-          }
-        />
-        {shown.length === 0 ? (
-          <Empty>No contacts match.</Empty>
-        ) : (
+      {filtered.length === 0 ? (
+        <Empty>No messages match this filter.</Empty>
+      ) : (
+        <Panel>
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <TH>Name</TH>
-                  <TH>Number</TH>
-                  <TH className="hidden sm:table-cell">Segment</TH>
-                  <TH className="hidden md:table-cell">Joined</TH>
-                  <TH align="center">Status</TH>
+                  <TH>From</TH>
+                  <TH>Message</TH>
+                  <TH>Branch</TH>
+                  <TH>Status</TH>
+                  <TH>Received</TH>
                 </tr>
               </thead>
               <tbody>
-                {shown.map((c) => (
-                  <Row key={c.id}>
-                    <TD className="font-medium text-chalk-100">{c.name}</TD>
-                    <TD className="tabular font-mono text-[12px]">{c.msisdn}</TD>
-                    <TD className="hidden sm:table-cell">{c.segment}</TD>
-                    <TD className="tabular hidden md:table-cell text-[12px]">
-                      {shortDate(c.joined)}
+                {filtered.map((m) => (
+                  <tr key={m.id}>
+                    <TD className="font-mono">{m.from}</TD>
+                    <TD>
+                      <p className="max-w-md text-sm leading-relaxed">{m.body}</p>
                     </TD>
-                    <TD align="center">
-                      <Badge tone={c.optedOut ? 'bad' : 'good'} dot>
-                        {c.optedOut ? 'Opted out' : 'Subscribed'}
+                    <TD>{m.branch || '—'}</TD>
+                    <TD>
+                      <Badge tone={m.forwarded ? 'good' : m.ignored ? 'neutral' : 'warn'}>
+                        {m.forwarded ? 'Forwarded' : m.ignored ? 'Ignored' : 'Pending'}
                       </Badge>
                     </TD>
-                  </Row>
+                    <TD className="tabular whitespace-nowrap">{m.received}</TD>
+                  </tr>
                 ))}
               </tbody>
             </Table>
           </TableWrap>
-        )}
-      </Panel>
+        </Panel>
+      )}
     </div>
   )
 }
 
-/* =================================================================== *
- * Gateways
- * =================================================================== */
+/* ───── Branches ───── */
 
-function Gateways() {
+function BranchesScreen({
+  branches,
+  setBranches,
+}: {
+  branches: Branch[]
+  setBranches: (b: Branch[]) => void
+}) {
+  const [editing, setEditing] = useState<string | null>(null)
+  const toast = useToast()
+
+  const toggle = (id: string) => {
+    setBranches(branches.map((b) => (b.id === id ? { ...b, active: !b.active } : b)))
+    const br = branches.find((b) => b.id === id)!
+    toast(br.active ? `${br.name} deactivated` : `${br.name} activated`)
+  }
+
   return (
     <div className="space-y-4">
-      <Panel>
-        <PanelHead
-          title="How sending works"
-          hint="Each handset runs the FetanSMS Android app, polls the API for queued messages, sends them over the operator network, and reports delivery status back."
-        />
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            ['1 · Queue', 'The API accepts a campaign and expands it into one row per recipient.'],
-            ['2 · Poll', 'Paired handsets pull batches sized to their remaining daily allowance.'],
-            ['3 · Report', 'Each handset posts back sent, delivered or failed with the operator reason.'],
-          ].map(([k, v]) => (
-            <div key={k} className="rounded-lg border border-ink-700 bg-ink-900 p-3.5">
-              <p className="text-[12px] font-semibold text-[var(--accent)]">{k}</p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-chalk-400">{v}</p>
-            </div>
-          ))}
-        </div>
-      </Panel>
+      <div className="flex gap-3">
+        <Btn size="sm" variant="solid" onClick={() => toast('Branch creation is handled in the Android app')}>
+          <Plus size={14} /> Add branch
+        </Btn>
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {gateways.map((g) => (
-          <Panel key={g.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span
-                  className={cx(
-                    'grid size-10 place-items-center rounded-xl',
-                    g.online ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'bg-ink-700 text-chalk-600',
-                  )}
-                >
-                  <Smartphone size={18} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        {branches.map((b) => (
+          <Panel key={b.id}>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-chalk-50">{b.name}</h3>
+                <p className="mt-0.5 text-sm text-chalk-500">{b.city}</p>
+              </div>
+              <Badge tone={b.active ? 'good' : 'neutral'}>{b.active ? 'Active' : 'Inactive'}</Badge>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-chalk-500">Telegram</span>
+                <span className={cx('font-mono text-xs', b.telegramChatId ? 'text-chalk-300' : 'text-chalk-600')}>
+                  {b.telegramChatId || 'Not connected'}
                 </span>
-                <div>
-                  <p className="text-[14px] font-semibold text-chalk-50">{g.label}</p>
-                  <p className="text-[11.5px] text-chalk-600">
-                    {g.device} · {g.operator}
-                  </p>
+              </div>
+              <div className="text-sm">
+                <span className="text-chalk-500">Sales people</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {salesPeople
+                    .filter((sp) => b.salesPeople.includes(sp.id))
+                    .map((sp) => (
+                      <Badge key={sp.id} tone="info">{sp.name}</Badge>
+                    ))}
+                  {b.salesPeople.length === 0 && <span className="text-xs text-chalk-600">None assigned</span>}
                 </div>
               </div>
-              <Badge tone={g.online ? 'good' : 'bad'} dot>
-                {g.online ? 'Online' : 'Offline'}
-              </Badge>
             </div>
 
-            <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-ink-700 bg-ink-700">
-              <div className="bg-ink-900 px-3 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wider text-chalk-600 uppercase">
-                  Battery
-                </dt>
-                <dd className="tabular mt-0.5 text-[13px] font-medium text-chalk-100">
-                  {g.battery}%
-                </dd>
+            <div className="mt-4 flex gap-2">
+              <Btn size="sm" onClick={() => toggle(b.id)}>
+                {b.active ? 'Deactivate' : 'Activate'}
+              </Btn>
+              <Btn size="sm" onClick={() => setEditing(b.id === editing ? null : b.id)}>
+                <Settings size={13} /> Settings
+              </Btn>
+            </div>
+
+            {editing === b.id && (
+              <div className="mt-3 rounded-lg border border-ink-700 bg-ink-900 p-3">
+                <p className="text-xs text-chalk-500">Branch settings are managed in the FetanSMS Android app. Pair this device and configure routing from there.</p>
               </div>
-              <div className="bg-ink-900 px-3 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wider text-chalk-600 uppercase">
-                  Queued
-                </dt>
-                <dd className="tabular mt-0.5 text-[13px] font-medium text-chalk-100">
-                  {g.queued}
-                </dd>
-              </div>
-            </dl>
+            )}
           </Panel>
         ))}
       </div>
@@ -714,134 +323,259 @@ function Gateways() {
   )
 }
 
-/* =================================================================== *
- * Billing
- * =================================================================== */
+/* ───── Telegram Setup ───── */
 
-function Billing({
-  payments,
-  setPayments,
-}: {
-  payments: Payment[]
-  setPayments: (fn: (prev: Payment[]) => Payment[]) => void
-}) {
+function TelegramScreen({ branches }: { branches: Branch[] }) {
+  const [step, setStep] = useState(0)
   const toast = useToast()
-  const [current, setCurrent] = useState('business')
 
-  const decide = (p: Payment, state: 'approved' | 'rejected') => {
-    setPayments((prev) => prev.map((x) => (x.id === p.id ? { ...x, state } : x)))
-    toast(
-      state === 'approved'
-        ? `${p.id} approved — quota topped up`
-        : `${p.id} rejected and the customer notified`,
-    )
+  return (
+    <div className="space-y-6">
+      <Panel>
+        <PanelHead title="How it works" hint="FetanSMS Telegram integration" />
+        <div className="space-y-3 text-sm text-chalk-300">
+          <p>The FetanSMS Android app intercepts incoming SMS messages and forwards them to your Telegram channels in real time.</p>
+          <ol className="list-inside list-decimal space-y-2 text-chalk-500">
+            <li>Create a Telegram bot via <span className="font-mono text-chalk-300">@BotFather</span></li>
+            <li>Add the bot to your business group or channel</li>
+            <li>Enter the bot token and chat ID in the FetanSMS app</li>
+            <li>Assign the channel to a branch — messages from that branch route there</li>
+          </ol>
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead title="Branch → Channel routing" hint="Each branch forwards to its own Telegram channel" />
+        <TableWrap>
+          <Table>
+            <thead>
+              <tr>
+                <TH>Branch</TH>
+                <TH>City</TH>
+                <TH>Telegram channel</TH>
+                <TH>Status</TH>
+              </tr>
+            </thead>
+            <tbody>
+              {branches.map((b) => (
+                <tr key={b.id}>
+                  <TD>{b.name}</TD>
+                  <TD>{b.city}</TD>
+                  <TD className="font-mono">{b.telegramChatId || '—'}</TD>
+                  <TD>
+                    <Badge tone={b.telegramChatId ? 'good' : 'warn'}>
+                      {b.telegramChatId ? 'Connected' : 'Not set'}
+                    </Badge>
+                  </TD>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableWrap>
+      </Panel>
+
+      <Panel>
+        <PanelHead title="Test connection" />
+        <div className="flex gap-3">
+          <Btn
+            variant="solid"
+            onClick={() => {
+              setStep(1)
+              setTimeout(() => {
+                setStep(2)
+                toast('Test message sent to Telegram')
+              }, 1500)
+            }}
+          >
+            <Send size={14} /> Send test message
+          </Btn>
+          {step === 1 && <span className="self-center text-sm text-chalk-500">Sending…</span>}
+          {step === 2 && (
+            <span className="self-center text-sm text-emerald-400">
+              <Check size={14} className="mr-1 inline" />
+              Delivered to Main Branch channel
+            </span>
+          )}
+        </div>
+      </Panel>
+    </div>
+  )
+}
+
+/* ───── Exception Numbers ───── */
+
+function ExceptionsScreen({
+  exceptions,
+  setExceptions,
+}: {
+  exceptions: ExceptionNumber[]
+  setExceptions: (e: ExceptionNumber[]) => void
+}) {
+  const [newNum, setNewNum] = useState('')
+  const [newLabel, setNewLabel] = useState('')
+  const toast = useToast()
+
+  const add = () => {
+    if (!newNum.trim()) return
+    setExceptions([...exceptions, { id: `ex${Date.now()}`, number: newNum.trim(), label: newLabel.trim() || 'Unlabeled' }])
+    setNewNum('')
+    setNewLabel('')
+    toast('Exception number added')
+  }
+
+  const remove = (id: string) => {
+    setExceptions(exceptions.filter((e) => e.id !== id))
+    toast('Exception number removed')
   }
 
   return (
     <div className="space-y-4">
       <Panel>
-        <PanelHead title="Subscription plans" hint="Quota resets on the billing anniversary" />
-        <div className="grid gap-3 md:grid-cols-3">
-          {plans.map((p) => {
-            const on = p.id === current
-            return (
-              <div
-                key={p.id}
-                className={cx(
-                  'rounded-xl border p-4 transition-colors',
-                  on ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-ink-700 bg-ink-900',
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[15px] font-semibold text-chalk-50">{p.name}</p>
-                  {on && <Badge tone="accent">Current</Badge>}
-                </div>
-                <p className="tabular mt-3 text-2xl font-semibold text-chalk-50">
-                  {money(p.price)}
-                  <span className="text-[13px] font-normal text-chalk-600"> /month</span>
-                </p>
-                <p className="tabular mt-1 text-[12px] text-chalk-500">
-                  {p.quota.toLocaleString()} messages included
-                </p>
-                <ul className="mt-4 space-y-1.5">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[12.5px] text-chalk-400">
-                      <BadgeCheck size={13} className="mt-0.5 shrink-0 text-[var(--accent)]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                {!on && (
-                  <Btn
-                    className="mt-4 w-full"
-                    onClick={() => {
-                      setCurrent(p.id)
-                      toast(`Switched to the ${p.name} plan`)
-                    }}
-                  >
-                    Switch to {p.name}
-                  </Btn>
-                )}
-              </div>
-            )
-          })}
+        <PanelHead title="Add exception" hint="Messages from these numbers will be skipped" />
+        <div className="flex flex-wrap gap-3">
+          <Field label="Phone number" className="flex-1">
+            <Input placeholder="+251 91 1234567 or short code" value={newNum} onChange={(e) => setNewNum(e.target.value)} />
+          </Field>
+          <Field label="Label" className="flex-1">
+            <Input placeholder="e.g. Telecom promotions" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          </Field>
+          <div className="flex items-end">
+            <Btn variant="solid" onClick={add}>
+              <Plus size={14} /> Add
+            </Btn>
+          </div>
         </div>
       </Panel>
 
       <Panel>
-        <PanelHead
-          title="Bank transfer approvals"
-          hint="Customers upload a transfer receipt; an admin confirms it against the bank statement"
-        />
+        <TableWrap>
+          <Table>
+            <thead>
+              <tr>
+                <TH>Number</TH>
+                <TH>Label</TH>
+                <TH>Action</TH>
+              </tr>
+            </thead>
+            <tbody>
+              {exceptions.map((ex) => (
+                <tr key={ex.id}>
+                  <TD className="font-mono">{ex.number}</TD>
+                  <TD>{ex.label}</TD>
+                  <TD>
+                    <Btn size="sm" onClick={() => remove(ex.id)}>
+                      <Trash2 size={13} />
+                    </Btn>
+                  </TD>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableWrap>
+      </Panel>
+    </div>
+  )
+}
+
+/* ───── Subscription ───── */
+
+function SubscriptionScreen() {
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+
+  return (
+    <div className="space-y-6">
+      <Panel>
+        <PanelHead title="Current plan" />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-chalk-300">Plan</span>
+            <span className="font-semibold text-chalk-50">{subscription.plan}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-chalk-300">Status</span>
+            <Badge tone="good">Active</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-chalk-300">Period</span>
+            <span className="tabular text-chalk-100">{shortDate(subscription.startDate)} — {shortDate(subscription.endDate)}</span>
+          </div>
+          <div>
+            <div className="mb-1.5 flex items-center justify-between text-sm">
+              <span className="text-chalk-500">Usage</span>
+              <span className="tabular text-chalk-100">{subscription.messagesUsed.toLocaleString()} / {subscription.messagesLimit.toLocaleString()} messages</span>
+            </div>
+            <Progress value={(subscription.messagesUsed / subscription.messagesLimit) * 100} />
+          </div>
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead title="Available plans" hint="Upgrade or change your plan" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          {plans.map((p) => (
+            <div
+              key={p.id}
+              className={cx(
+                'cursor-pointer rounded-xl border p-4 transition-colors',
+                subscription.plan.toLowerCase() === p.id
+                  ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
+                  : selectedPlan === p.id
+                    ? 'border-chalk-500 bg-ink-850'
+                    : 'border-ink-700 bg-ink-900 hover:border-ink-600',
+              )}
+              onClick={() => setSelectedPlan(p.id)}
+            >
+              <h3 className="text-lg font-semibold text-chalk-50">{p.name}</h3>
+              <p className="mt-1 text-2xl font-bold text-chalk-50">
+                {p.price.toLocaleString()} <span className="text-sm font-normal text-chalk-500">ETB/mo</span>
+              </p>
+              <p className="mt-1 text-sm text-chalk-500">{p.limit.toLocaleString()} messages</p>
+              <ul className="mt-3 space-y-1.5">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-chalk-300">
+                    <Check size={14} className="mt-0.5 shrink-0 text-emerald-400" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              {subscription.plan.toLowerCase() === p.id && (
+                <span className="mt-3 inline-block">
+                  <Badge tone="accent">Current plan</Badge>
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead title="Payment history" />
         <TableWrap>
           <Table>
             <thead>
               <tr>
                 <TH>Reference</TH>
-                <TH className="hidden sm:table-cell">Plan</TH>
-                <TH className="hidden md:table-cell">Method</TH>
-                <TH align="right">Amount</TH>
-                <TH>State</TH>
-                <TH align="right">Action</TH>
+                <TH>Plan</TH>
+                <TH>Amount</TH>
+                <TH>Method</TH>
+                <TH>Date</TH>
+                <TH>Status</TH>
               </tr>
             </thead>
             <tbody>
               {payments.map((p) => (
-                <Row key={p.id}>
+                <tr key={p.id}>
+                  <TD className="font-mono">{p.id}</TD>
+                  <TD>{p.plan}</TD>
+                  <TD className="tabular">{money(p.amount)}</TD>
+                  <TD>{p.method}</TD>
+                  <TD className="tabular">{shortDate(p.date)}</TD>
                   <TD>
-                    <p className="tabular font-mono text-[12px] text-chalk-100">{p.id}</p>
-                    <p className="tabular font-mono text-[11px] text-chalk-600">{p.reference}</p>
-                  </TD>
-                  <TD className="hidden sm:table-cell">{p.plan}</TD>
-                  <TD className="hidden md:table-cell">{p.method}</TD>
-                  <TD align="right" className="tabular font-medium text-chalk-100">
-                    {money(p.amount)}
-                  </TD>
-                  <TD>
-                    <Badge
-                      tone={p.state === 'approved' ? 'good' : p.state === 'rejected' ? 'bad' : 'warn'}
-                      dot
-                    >
+                    <Badge tone={p.state === 'approved' ? 'good' : p.state === 'pending' ? 'warn' : 'bad'}>
                       {p.state}
                     </Badge>
                   </TD>
-                  <TD align="right">
-                    {p.state === 'pending' ? (
-                      <div className="flex justify-end gap-1.5">
-                        <Btn variant="solid" onClick={() => decide(p, 'approved')}>
-                          <Check size={13} /> Approve
-                        </Btn>
-                        <Btn onClick={() => decide(p, 'rejected')}>
-                          <X size={13} />
-                        </Btn>
-                      </div>
-                    ) : (
-                      <span className="tabular text-[12px] text-chalk-600">
-                        {shortDate(p.date)}
-                      </span>
-                    )}
-                  </TD>
-                </Row>
+                </tr>
               ))}
             </tbody>
           </Table>

@@ -64,8 +64,8 @@ export const profile: ProfileShape = {
   /** Numbers on the hero band. Keep these honest and easy to defend. */
   stats: [
     { value: '6', label: 'Systems shipped' },
-    { value: '14', label: 'Distinct user roles modelled' },
-    { value: '4', label: 'Industries served' },
+    { value: '30+', label: 'Distinct user roles modelled' },
+    { value: '5', label: 'Industries served' },
     { value: '100%', label: 'Built end to end' },
   ],
 
