@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ExternalLink, Play } from 'lucide-react'
+import { GithubIcon } from '@/components/icons'
 import { projects, type Project } from '@/data/projects'
 
 export function Work() {
@@ -114,6 +115,17 @@ function ProjectRow({
                 className="transition-transform group-hover:translate-x-0.5"
               />
             </Link>
+            {project.repo && (
+              <a
+                href={project.repo}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-ink-700 px-4 text-sm font-medium text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-100"
+              >
+                <GithubIcon size={15} />
+                Source
+              </a>
+            )}
             {project.links?.map((link) => (
               <a
                 key={link.href}
