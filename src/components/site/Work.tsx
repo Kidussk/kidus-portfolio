@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, ExternalLink, Play } from 'lucide-react'
 import { GithubIcon } from '@/components/icons'
 import { projects, type Project } from '@/data/projects'
 
@@ -124,6 +124,18 @@ function ProjectRow({
               <GithubIcon size={15} />
               Source
             </a>
+            {project.links?.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-ink-700 px-4 text-sm font-medium text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-100"
+              >
+                <ExternalLink size={15} />
+                {link.label}
+              </a>
+            ))}
           </div>
         </div>
 

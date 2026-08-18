@@ -16,6 +16,8 @@ export type Project = {
   /** Named metrics shown as a small strip on the detail panel. */
   facts: { label: string; value: string }[]
   repo: string
+  /** External links — website, Play Store, etc. */
+  links?: { label: string; href: string }[]
   /** Drives the per-demo colour theme. */
   accent: string
   accentSoft: string
@@ -80,6 +82,7 @@ export const projects: Project[] = [
       { label: 'Build step', value: 'None' },
     ],
     repo: 'https://github.com/Kidussk/ethiotractors',
+    links: [{ label: 'Website', href: 'https://ethiotractor.com' }],
     accent: '#E09F36',
     accentSoft: 'rgba(224, 159, 54, 0.16)',
     demoScreens: ['Public site', 'Catalogue', 'Quote request', 'Admin inbox'],
@@ -110,6 +113,7 @@ export const projects: Project[] = [
       { label: 'Reports', value: '6' },
     ],
     repo: 'https://github.com/Kidussk/liben-proforma',
+    links: [{ label: 'Website', href: 'http://liben.com.et/' }],
     accent: '#3E9C8F',
     accentSoft: 'rgba(62, 156, 143, 0.16)',
     demoScreens: ['Project board', 'Command centre', 'Site reports', 'Proforma generator'],
@@ -170,6 +174,10 @@ export const projects: Project[] = [
       { label: 'Languages', value: '3' },
     ],
     repo: 'https://github.com/Kidussk/FetanSMS',
+    links: [
+      { label: 'Website', href: 'https://fetantech.com.et' },
+      { label: 'Play Store', href: 'https://play.google.com/store/apps/details?id=com.bluetech.fetansms' },
+    ],
     accent: '#A07CF0',
     accentSoft: 'rgba(160, 124, 240, 0.16)',
     demoScreens: ['Home', 'Branches', 'Telegram setup', 'Subscription'],
