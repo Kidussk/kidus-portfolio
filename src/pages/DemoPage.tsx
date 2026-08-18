@@ -9,7 +9,6 @@ import {
   RotateCcw,
   X,
 } from 'lucide-react'
-import { GithubIcon } from '@/components/icons'
 import { projectBySlug, projects } from '@/data/projects'
 import { demoRegistry } from '@/demos/registry'
 
@@ -85,15 +84,6 @@ export default function DemoPage() {
           >
             <RotateCcw size={14} />
           </button>
-          <a
-            href={project.repo}
-            target="_blank"
-            rel="noreferrer noopener"
-            title="View the source on GitHub"
-            className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-50"
-          >
-            <GithubIcon size={14} />
-          </a>
           {project.links?.map((link) => (
             <a
               key={link.href}

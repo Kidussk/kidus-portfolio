@@ -173,7 +173,7 @@ export const projects: Project[] = [
       { label: 'DB migrations', value: '14' },
       { label: 'Languages', value: '3' },
     ],
-    repo: 'https://github.com/Kidussk/FetanSMS',
+    repo: '',
     links: [
       { label: 'Website', href: 'https://fetantech.com.et' },
       { label: 'Play Store', href: 'https://play.google.com/store/apps/details?id=com.bluetech.fetansms' },
