@@ -58,10 +58,10 @@ const nav: NavItem[] = [
 ]
 
 const titles: Record<string, [string, string]> = {
-  structure: ['Academic structure', 'College → department → programme → batch → section'],
+  structure: ['Academic structure', 'Department → batch → section'],
   timetable: ['Weekly timetable', 'Instructor and room conflicts are detected as you edit'],
   exams: ['Exam calendar', 'Venue capacity and invigilator assignment'],
-  announcements: ['Announcements', 'Targeted by college, department, batch or section'],
+  announcements: ['Announcements', 'Targeted by department, batch or section'],
   import: ['Bulk import', 'Validate a registrar spreadsheet before anything is written'],
 }
 
@@ -97,9 +97,7 @@ export default function UniHubDemo({ project }: DemoProps) {
  * =================================================================== */
 
 const kindIcon: Record<Node['kind'], typeof Building2> = {
-  college: Building2,
-  department: Network,
-  programme: GraduationCap,
+  department: Building2,
   batch: Layers,
   section: Users,
 }
@@ -115,7 +113,7 @@ function Structure() {
     })
 
   const counts = useMemo(() => {
-    const tally = { college: 0, department: 0, programme: 0, batch: 0, section: 0 }
+    const tally = { department: 0, batch: 0, section: 0 }
     const walk = (nodes: Node[]) =>
       nodes.forEach((n) => {
         tally[n.kind]++
@@ -128,9 +126,8 @@ function Structure() {
   return (
     <div className="space-y-4">
       <StatRow>
-        <Stat label="Colleges" value={counts.college} icon={<Building2 size={14} />} />
-        <Stat label="Departments" value={counts.department} icon={<Network size={14} />} />
-        <Stat label="Programmes" value={counts.programme} icon={<GraduationCap size={14} />} />
+        <Stat label="Departments" value={counts.department} icon={<Building2 size={14} />} />
+        <Stat label="Batches" value={counts.batch} icon={<Layers size={14} />} />
         <Stat label="Sections" value={counts.section} icon={<Users size={14} />} />
       </StatRow>
 
@@ -611,7 +608,7 @@ function Import() {
                 <TH>Line</TH>
                 <TH>University ID</TH>
                 <TH>Name</TH>
-                <TH className="hidden md:table-cell">Programme</TH>
+                <TH className="hidden md:table-cell">Department</TH>
                 <TH className="hidden sm:table-cell">Batch</TH>
                 <TH>Result</TH>
               </tr>
@@ -624,7 +621,7 @@ function Import() {
                     {r.id || <span className="text-rose-400">missing</span>}
                   </TD>
                   <TD className="font-medium text-chalk-100">{r.name}</TD>
-                  <TD className="hidden md:table-cell">{r.programme}</TD>
+                  <TD className="hidden md:table-cell">{r.department}</TD>
                   <TD className="tabular hidden sm:table-cell">{r.batch}</TD>
                   <TD>
                     {r.issue ? (

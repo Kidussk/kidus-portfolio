@@ -3,7 +3,7 @@
 export type Node = {
   id: string
   name: string
-  kind: 'college' | 'department' | 'programme' | 'batch' | 'section'
+  kind: 'department' | 'batch' | 'section'
   meta?: string
   children?: Node[]
 }
@@ -46,156 +46,102 @@ export type ImportRow = {
   line: number
   id: string
   name: string
-  programme: string
+  department: string
   batch: string
   issue: string | null
 }
 
 export const structure: Node[] = [
   {
-    id: 'c1',
-    name: 'College of Engineering & Technology',
-    kind: 'college',
-    meta: '4 departments · 2,840 students',
+    id: 'd1',
+    name: 'Computer Science',
+    kind: 'department',
+    meta: 'Head: Dr. Almaz Wondwosen · 432 students',
     children: [
       {
-        id: 'd1',
-        name: 'Computer Science',
-        kind: 'department',
-        meta: 'Head: Dr. Almaz Wondwosen',
+        id: 'b1',
+        name: 'Batch 2023 — Year 4',
+        kind: 'batch',
+        meta: '184 students',
         children: [
-          {
-            id: 'p1',
-            name: 'BSc Computer Science',
-            kind: 'programme',
-            meta: '4 years · regular',
-            children: [
-              {
-                id: 'b1',
-                name: 'Batch 2023 — Year 4',
-                kind: 'batch',
-                meta: '184 students',
-                children: [
-                  { id: 'se1', name: 'Section A', kind: 'section', meta: '62 students · Block B 204' },
-                  { id: 'se2', name: 'Section B', kind: 'section', meta: '61 students · Block B 206' },
-                  { id: 'se3', name: 'Section C', kind: 'section', meta: '61 students · Block B 208' },
-                ],
-              },
-              {
-                id: 'b2',
-                name: 'Batch 2024 — Year 3',
-                kind: 'batch',
-                meta: '210 students',
-                children: [
-                  { id: 'se4', name: 'Section A', kind: 'section', meta: '70 students · Block A 101' },
-                  { id: 'se5', name: 'Section B', kind: 'section', meta: '70 students · Block A 103' },
-                  { id: 'se6', name: 'Section C', kind: 'section', meta: '70 students · Block A 105' },
-                ],
-              },
-            ],
-          },
-          {
-            id: 'p2',
-            name: 'MSc Software Engineering',
-            kind: 'programme',
-            meta: '2 years · evening',
-            children: [
-              {
-                id: 'b3',
-                name: 'Batch 2025 — Year 2',
-                kind: 'batch',
-                meta: '38 students',
-                children: [{ id: 'se7', name: 'Section A', kind: 'section', meta: '38 students · Block C 302' }],
-              },
-            ],
-          },
+          { id: 'se1', name: 'Section A', kind: 'section', meta: '62 students · Block B 204' },
+          { id: 'se2', name: 'Section B', kind: 'section', meta: '61 students · Block B 206' },
+          { id: 'se3', name: 'Section C', kind: 'section', meta: '61 students · Block B 208' },
         ],
       },
       {
-        id: 'd2',
-        name: 'Electrical & Computer Engineering',
-        kind: 'department',
-        meta: 'Head: Dr. Yohannes Bekele',
+        id: 'b2',
+        name: 'Batch 2024 — Year 3',
+        kind: 'batch',
+        meta: '210 students',
         children: [
-          {
-            id: 'p3',
-            name: 'BSc Electrical Engineering',
-            kind: 'programme',
-            meta: '5 years · regular',
-            children: [
-              {
-                id: 'b4',
-                name: 'Batch 2022 — Year 5',
-                kind: 'batch',
-                meta: '146 students',
-                children: [
-                  { id: 'se8', name: 'Section A', kind: 'section', meta: '73 students · Block D 201' },
-                  { id: 'se9', name: 'Section B', kind: 'section', meta: '73 students · Block D 203' },
-                ],
-              },
-            ],
-          },
+          { id: 'se4', name: 'Section A', kind: 'section', meta: '70 students · Block A 101' },
+          { id: 'se5', name: 'Section B', kind: 'section', meta: '70 students · Block A 103' },
+          { id: 'se6', name: 'Section C', kind: 'section', meta: '70 students · Block A 105' },
         ],
       },
       {
-        id: 'd3',
-        name: 'Civil Engineering',
-        kind: 'department',
-        meta: 'Head: Dr. Meseret Girma',
+        id: 'b3',
+        name: 'Batch 2025 — Year 2 (MSc SE)',
+        kind: 'batch',
+        meta: '38 students',
         children: [
-          {
-            id: 'p4',
-            name: 'BSc Civil Engineering',
-            kind: 'programme',
-            meta: '5 years · regular',
-            children: [
-              {
-                id: 'b5',
-                name: 'Batch 2023 — Year 4',
-                kind: 'batch',
-                meta: '198 students',
-                children: [
-                  { id: 'se10', name: 'Section A', kind: 'section', meta: '99 students · Block E 101' },
-                  { id: 'se11', name: 'Section B', kind: 'section', meta: '99 students · Block E 103' },
-                ],
-              },
-            ],
-          },
+          { id: 'se7', name: 'Section A', kind: 'section', meta: '38 students · Block C 302' },
         ],
       },
     ],
   },
   {
-    id: 'c2',
-    name: 'College of Business & Economics',
-    kind: 'college',
-    meta: '3 departments · 1,960 students',
+    id: 'd2',
+    name: 'Electrical & Computer Engineering',
+    kind: 'department',
+    meta: 'Head: Dr. Yohannes Bekele · 146 students',
     children: [
       {
-        id: 'd4',
-        name: 'Accounting & Finance',
-        kind: 'department',
-        meta: 'Head: Mr. Dawit Ayele',
+        id: 'b4',
+        name: 'Batch 2022 — Year 5',
+        kind: 'batch',
+        meta: '146 students',
         children: [
-          {
-            id: 'p5',
-            name: 'BA Accounting',
-            kind: 'programme',
-            meta: '3 years · regular',
-            children: [
-              {
-                id: 'b6',
-                name: 'Batch 2024 — Year 2',
-                kind: 'batch',
-                meta: '240 students',
-                children: [
-                  { id: 'se12', name: 'Section A', kind: 'section', meta: '80 students · Hall 1' },
-                  { id: 'se13', name: 'Section B', kind: 'section', meta: '80 students · Hall 2' },
-                  { id: 'se14', name: 'Section C', kind: 'section', meta: '80 students · Hall 3' },
-                ],
-              },
-            ],
-          },
+          { id: 'se8', name: 'Section A', kind: 'section', meta: '73 students · Block D 201' },
+          { id: 'se9', name: 'Section B', kind: 'section', meta: '73 students · Block D 203' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'd3',
+    name: 'Civil Engineering',
+    kind: 'department',
+    meta: 'Head: Dr. Meseret Girma · 198 students',
+    children: [
+      {
+        id: 'b5',
+        name: 'Batch 2023 — Year 4',
+        kind: 'batch',
+        meta: '198 students',
+        children: [
+          { id: 'se10', name: 'Section A', kind: 'section', meta: '99 students · Block E 101' },
+          { id: 'se11', name: 'Section B', kind: 'section', meta: '99 students · Block E 103' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'd4',
+    name: 'Accounting & Finance',
+    kind: 'department',
+    meta: 'Head: Mr. Dawit Ayele · 240 students',
+    children: [
+      {
+        id: 'b6',
+        name: 'Batch 2024 — Year 2',
+        kind: 'batch',
+        meta: '240 students',
+        children: [
+          { id: 'se12', name: 'Section A', kind: 'section', meta: '80 students · Hall 1' },
+          { id: 'se13', name: 'Section B', kind: 'section', meta: '80 students · Hall 2' },
+          { id: 'se14', name: 'Section C', kind: 'section', meta: '80 students · Hall 3' },
         ],
       },
     ],
@@ -236,7 +182,7 @@ export const announcements: Announcement[] = [
     body: 'The September examination timetable is now final. Students must carry their identification card to every session. Any clash must be reported to the registrar before 5 September.',
     author: 'Registrar',
     posted: '2026-08-12',
-    audience: 'All colleges',
+    audience: 'All departments',
     pinned: true,
   },
   {
@@ -254,7 +200,7 @@ export const announcements: Announcement[] = [
     body: 'The main library will open from 07:00 to 23:00 from 7 September until the end of the examination period.',
     author: 'Library Services',
     posted: '2026-08-09',
-    audience: 'All colleges',
+    audience: 'All departments',
     pinned: false,
   },
   {
@@ -269,15 +215,15 @@ export const announcements: Announcement[] = [
 ]
 
 export const importPreview: ImportRow[] = [
-  { line: 2, id: 'ETS0412/16', name: 'Abel Tariku', programme: 'BSc Computer Science', batch: '2023', issue: null },
-  { line: 3, id: 'ETS0418/16', name: 'Bethlehem Assefa', programme: 'BSc Computer Science', batch: '2023', issue: null },
-  { line: 4, id: 'ETS0421/16', name: 'Caleb Mengistu', programme: 'BSc Computer Science', batch: '2023', issue: null },
-  { line: 5, id: 'ETS0418/16', name: 'Bethlehem A.', programme: 'BSc Computer Science', batch: '2023', issue: 'Duplicate university ID — already on line 3' },
-  { line: 6, id: 'ETS0433/16', name: 'Dagmawit Solomon', programme: 'BSc Comp Science', batch: '2023', issue: 'Programme not recognised — did you mean “BSc Computer Science”?' },
-  { line: 7, id: 'ETS0440/16', name: 'Eyob Girmay', programme: 'BSc Computer Science', batch: '2023', issue: null },
-  { line: 8, id: '', name: 'Feven Habtamu', programme: 'BSc Computer Science', batch: '2023', issue: 'University ID is required' },
-  { line: 9, id: 'ETS0451/16', name: 'Getnet Alemu', programme: 'BSc Computer Science', batch: '2019', issue: 'Batch 2019 is closed for intake' },
-  { line: 10, id: 'ETS0455/16', name: 'Hilina Berhanu', programme: 'BSc Computer Science', batch: '2023', issue: null },
+  { line: 2, id: 'ETS0412/16', name: 'Abel Tariku', department: 'Computer Science', batch: '2023', issue: null },
+  { line: 3, id: 'ETS0418/16', name: 'Bethlehem Assefa', department: 'Computer Science', batch: '2023', issue: null },
+  { line: 4, id: 'ETS0421/16', name: 'Caleb Mengistu', department: 'Computer Science', batch: '2023', issue: null },
+  { line: 5, id: 'ETS0418/16', name: 'Bethlehem A.', department: 'Computer Science', batch: '2023', issue: 'Duplicate university ID — already on line 3' },
+  { line: 6, id: 'ETS0433/16', name: 'Dagmawit Solomon', department: 'Comp Science', batch: '2023', issue: 'Department not recognised — did you mean "Computer Science"?' },
+  { line: 7, id: 'ETS0440/16', name: 'Eyob Girmay', department: 'Computer Science', batch: '2023', issue: null },
+  { line: 8, id: '', name: 'Feven Habtamu', department: 'Computer Science', batch: '2023', issue: 'University ID is required' },
+  { line: 9, id: 'ETS0451/16', name: 'Getnet Alemu', department: 'Computer Science', batch: '2019', issue: 'Batch 2019 is closed for intake' },
+  { line: 10, id: 'ETS0455/16', name: 'Hilina Berhanu', department: 'Computer Science', batch: '2023', issue: null },
 ]
 
 /** Two sessions clash when they share an instructor or a room at the same hour. */

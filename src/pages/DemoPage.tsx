@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Info,
   RotateCcw,
   X,
@@ -84,15 +85,29 @@ export default function DemoPage() {
           >
             <RotateCcw size={14} />
           </button>
-          <a
-            href={project.repo}
-            target="_blank"
-            rel="noreferrer noopener"
-            title="View the source on GitHub"
-            className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-50"
-          >
-            <GithubIcon size={14} />
-          </a>
+          {project.repo && (
+            <a
+              href={project.repo}
+              target="_blank"
+              rel="noreferrer noopener"
+              title="View the source on GitHub"
+              className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-50"
+            >
+              <GithubIcon size={14} />
+            </a>
+          )}
+          {project.links?.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              title={link.label}
+              className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-chalk-400 transition-colors hover:border-ink-600 hover:text-chalk-50"
+            >
+              <ExternalLink size={14} />
+            </a>
+          ))}
         </div>
       </header>
 

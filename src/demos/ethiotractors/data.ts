@@ -1,11 +1,10 @@
 /** Demo seed data for EthioTractors. Fictional enquiries and figures. */
 
-export type Sector = 'agriculture' | 'construction' | 'mining' | 'power'
+export type Sector = 'agriculture' | 'construction' | 'power'
 
 export const sectorLabel: Record<Sector, string> = {
   agriculture: 'Agriculture',
   construction: 'Construction',
-  mining: 'Mining',
   power: 'Power & Logistics',
 }
 
@@ -233,18 +232,18 @@ export const products: Product[] = [
   },
   {
     id: 'p11',
-    name: 'ZE490E Mining Excavator',
+    name: 'ZE490E Heavy Excavator',
     brand: 'Zoomlion',
-    category: 'Mining',
-    sector: 'mining',
-    blurb: 'Forty-nine tonne excavator with reinforced undercarriage for quarry and mine duty.',
+    category: 'Earthmoving',
+    sector: 'construction',
+    blurb: 'Forty-nine tonne excavator with reinforced undercarriage for quarry and heavy earthwork.',
     specs: [
       ['Operating weight', '49,000 kg'],
       ['Bucket', '2.6 m³'],
       ['Engine', '355 hp'],
       ['Max dig depth', '7.5 m'],
     ],
-    tags: ['Mining', 'Heavy'],
+    tags: ['Earthmoving', 'Heavy'],
     published: true,
     quoteClicks: 239,
   },
@@ -252,8 +251,8 @@ export const products: Product[] = [
     id: 'p12',
     name: 'Rigid Dump Truck 40T',
     brand: 'Zoomlion',
-    category: 'Mining',
-    sector: 'mining',
+    category: 'Earthmoving',
+    sector: 'construction',
     blurb: 'Forty tonne rigid haul truck for quarry benches and short haul roads.',
     specs: [
       ['Payload', '40 t'],
@@ -353,8 +352,8 @@ export const enquiries: Enquiry[] = [
     company: 'Rift Valley Minerals',
     email: 'g.bekele@rvminerals.com',
     phone: '+251 913 40 77 21',
-    sector: 'mining',
-    interest: 'ZE490E Mining Excavator',
+    sector: 'construction',
+    interest: 'ZE490E Heavy Excavator',
     message:
       'Evaluating equipment for a new quarry bench. Interested in the 49 t class plus two haul trucks. Can you visit the site?',
     received: '2026-08-11',
